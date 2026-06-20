@@ -1,3 +1,5 @@
+<p align="center"><img src="https://raw.githubusercontent.com/go-fde/brand/main/social/go-fde.png" alt="go-fde/fde" width="720"></p>
+
 # fde
 
 Unified dispatcher for Full-Disk Encryption block devices.
