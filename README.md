@@ -2,6 +2,10 @@
 
 # fde
 
+[![ci](https://github.com/go-fde/fde/actions/workflows/ci.yml/badge.svg)](https://github.com/go-fde/fde/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/go-fde/fde.svg)](https://pkg.go.dev/github.com/go-fde/fde)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](LICENSE)
+
 Unified dispatcher for Full-Disk Encryption block devices.
 
 ## Overview
