@@ -9,7 +9,6 @@ package fde
 import (
 	"bytes"
 	"crypto/aes"
-	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
@@ -48,8 +47,12 @@ func fdeXorBytes(dst, src []byte) {
 	}
 }
 
-// fdeAfDiffuse applies the LUKS diffusion function (HMAC-SHA256) to block
-// in-place. Matches hashDiffuse("sha256") in the luks package.
+// fdeAfDiffuse applies the LUKS anti-forensic diffusion function to block
+// in-place. Matches hashDiffuse("sha256") in the luks package and
+// cryptsetup's diffuse() in lib/luks1/af.c: each digest-sized sub-block i is
+// replaced by HASH(BE32(i) || sub-block_i) — a plain, keyless hash of the
+// big-endian sub-block index prepended to the block. This is NOT HMAC; a
+// partial trailing sub-block uses only the required leading digest bytes.
 func fdeAfDiffuse(block []byte) {
 	const digestLen = 32
 	counter := make([]byte, 4)
@@ -60,7 +63,8 @@ func fdeAfDiffuse(block []byte) {
 		if chunk > digestLen {
 			chunk = digestLen
 		}
-		h := hmac.New(sha256.New, counter)
+		h := sha256.New()
+		h.Write(counter)
 		h.Write(block[pos : pos+chunk])
 		sum := h.Sum(nil)
 		copy(block[pos:pos+chunk], sum[:chunk])
