@@ -4,8 +4,8 @@ github.com/go-fde/apfs v0.0.0-20260806070302-251df306364c h1:1f5Pp47OFAL8JiYVAvx
 github.com/go-fde/apfs v0.0.0-20260806070302-251df306364c/go.mod h1:JJ43mniEoWru4ChFUDCrRgJybjzyBvhbqLxN3hpz/OE=
 github.com/go-fde/clear v0.0.0-20260806070306-f6b38d4c72f8 h1:eQBGuyu6RgK2NgGFqGyHPzvW9Y//T2cfoiiffrtqHGc=
 github.com/go-fde/clear v0.0.0-20260806070306-f6b38d4c72f8/go.mod h1:Io03ZU+0QyLJ3joiQH8H0enxU1DOBoKsptfKGZGlv34=
-github.com/go-fde/luks v0.0.0-20260620062443-aca347e9cc1b h1:sKUnlt6YaQSBF/p83hwB88fHZBdZp3OuDRGHnkeFsAs=
-github.com/go-fde/luks v0.0.0-20260620062443-aca347e9cc1b/go.mod h1:XhPofKJH3t7NebBTvA6AVhXahvM+OJPRTFomODWt9/A=
+github.com/go-fde/luks v0.0.0-20260806070309-cc203b30f980 h1:rduvPR5cMioNeBVvzvepiSOeq8wC2MAfzzoWWWwf5Hc=
+github.com/go-fde/luks v0.0.0-20260806070309-cc203b30f980/go.mod h1:M0UoCvKw5BRW3NuMxIraIQgVvo5qdC/9NRssuf4sIVA=
 golang.org/x/crypto v0.50.0 h1:zO47/JPrL6vsNkINmLoo/PH1gcxpls50DNogFvB5ZGI=
 golang.org/x/crypto v0.50.0/go.mod h1:3muZ7vA7PBCE6xgPX7nkzzjiUq87kRItoJQM1Yo8S+Q=
 golang.org/x/sys v0.43.0 h1:Rlag2XtaFTxp19wS8MXlJwTvoh8ArU6ezoyFsMyCTNI=
