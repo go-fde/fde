@@ -1,7 +1,11 @@
 github.com/go-encryptions/xts v0.0.0-20260702212620-e9fe59a121e5 h1:p0heeHiJ+uMORaAAWbZqmKyYmwdO+52eR3Pk+vtyGq0=
 github.com/go-encryptions/xts v0.0.0-20260702212620-e9fe59a121e5/go.mod h1:fjp9R/AL03OpIra6fx0445YmgZ5LvqhXtK0FbDJPSWc=
+github.com/go-encryptions/xts v0.0.0-20260806072938-a791f2c1d6df h1:z0EkWXqxCyGxTAMz4eDO673wRPBYPAUe+s1UDFcvREQ=
+github.com/go-encryptions/xts v0.0.0-20260806072938-a791f2c1d6df/go.mod h1:bisvBLC3DdVoah7HUjwCl4UmM2pP4VHN6fQwLXWMxo4=
 github.com/go-fde/apfs v0.0.0-20260806070302-251df306364c h1:1f5Pp47OFAL8JiYVAvxo48SbXJPa47T75MAZ7yZyicI=
 github.com/go-fde/apfs v0.0.0-20260806070302-251df306364c/go.mod h1:JJ43mniEoWru4ChFUDCrRgJybjzyBvhbqLxN3hpz/OE=
+github.com/go-fde/apfs v0.0.0-20260830130536-7ba9b68afb9d h1:TXSdCsEKqGXDwBRyg1LZHxEqqX7muB5OtZl+3mOdNII=
+github.com/go-fde/apfs v0.0.0-20260830130536-7ba9b68afb9d/go.mod h1:dgpK7oVsIUIPFVlVUYiuqOpNQDM3aHf25Frq9ADTv+U=
 github.com/go-fde/clear v0.0.0-20260806070306-f6b38d4c72f8 h1:eQBGuyu6RgK2NgGFqGyHPzvW9Y//T2cfoiiffrtqHGc=
 github.com/go-fde/clear v0.0.0-20260806070306-f6b38d4c72f8/go.mod h1:Io03ZU+0QyLJ3joiQH8H0enxU1DOBoKsptfKGZGlv34=
 github.com/go-fde/luks v0.0.0-20260806070309-cc203b30f980 h1:rduvPR5cMioNeBVvzvepiSOeq8wC2MAfzzoWWWwf5Hc=
