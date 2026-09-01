@@ -12,6 +12,8 @@ github.com/go-fde/apfs v0.0.0-20260830211528-d320f021ebc0 h1:GzndO633bTYJF0L4UC+
 github.com/go-fde/apfs v0.0.0-20260830211528-d320f021ebc0/go.mod h1:Ot6PoUl0P/JQs8dUsAAauSfveirOqotR+F8IeOUTroM=
 github.com/go-fde/clear v0.0.0-20260806070306-f6b38d4c72f8 h1:eQBGuyu6RgK2NgGFqGyHPzvW9Y//T2cfoiiffrtqHGc=
 github.com/go-fde/clear v0.0.0-20260806070306-f6b38d4c72f8/go.mod h1:Io03ZU+0QyLJ3joiQH8H0enxU1DOBoKsptfKGZGlv34=
+github.com/go-fde/clear v0.0.0-20260830121017-65feb652d923 h1:EWfgd1d0Lucwamk9sDe5q89z88ImBNJvtCFxqO4iod0=
+github.com/go-fde/clear v0.0.0-20260830121017-65feb652d923/go.mod h1:Io03ZU+0QyLJ3joiQH8H0enxU1DOBoKsptfKGZGlv34=
 github.com/go-fde/luks v0.0.0-20260806070309-cc203b30f980 h1:rduvPR5cMioNeBVvzvepiSOeq8wC2MAfzzoWWWwf5Hc=
 github.com/go-fde/luks v0.0.0-20260806070309-cc203b30f980/go.mod h1:M0UoCvKw5BRW3NuMxIraIQgVvo5qdC/9NRssuf4sIVA=
 github.com/go-fde/luks v0.0.0-20260830211523-6cf5fe0027a4 h1:c3sbp5wpfcAC+P4Z5TIIYNwcK2ZQEJN8CjV1sM+Fz+M=
