@@ -6,7 +6,7 @@ require (
 	github.com/go-fde/apfs v0.0.0-20260830211528-d320f021ebc0
 	github.com/go-fde/clear v0.0.0-20260830121017-65feb652d923
 	github.com/go-fde/luks v0.0.0-20260830211523-6cf5fe0027a4
-	golang.org/x/crypto v0.55.0
+	golang.org/x/crypto v0.56.0
 )
 
 require (
