@@ -1,6 +1,6 @@
 module github.com/go-fde/fde
 
-go 1.26.4
+go 1.27.1
 
 require (
 	github.com/go-fde/apfs v0.0.0-20260912170739-6acb57fc9eb0
