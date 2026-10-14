@@ -1,11 +1,11 @@
-github.com/go-encryptions/xts v0.0.0-20261004234803-c570e92cfa9e h1:oZ3S0qTDPDFJCIrojiDKptVE9arpL1I3OnorqN+MpZQ=
-github.com/go-encryptions/xts v0.0.0-20261004234803-c570e92cfa9e/go.mod h1:Ih1Wja84KCfK9hCIWucnjjE3h3kvJ/O3+WDPSiIwCKQ=
-github.com/go-fde/apfs v0.0.0-20261010194058-19a0f3f60f2e h1:ohwRTolDAD5u70ZyzMOlMSCGSWbUk7NbBs7XfFKVqwo=
-github.com/go-fde/apfs v0.0.0-20261010194058-19a0f3f60f2e/go.mod h1:gTDj9QMZl59DAXrcbX/k8eyQJHyBxNfLkiT1WXb4KoM=
+github.com/go-encryptions/xts v0.0.0-20261012185738-047ae186ad23 h1:x12NpJQhgPIxKm4+q1TVa8hJ667LtZ3fS472Y0uLEoY=
+github.com/go-encryptions/xts v0.0.0-20261012185738-047ae186ad23/go.mod h1:MpappevOqsWjrgi8lxnzHp1ylO8q8biBVsL0VWHidfQ=
+github.com/go-fde/apfs v0.0.0-20261013201543-56b159ff7a3a h1:jpZIV+DCMTj2sf6AppaSTX9DNXuby9LYo9tNkz2x7DQ=
+github.com/go-fde/apfs v0.0.0-20261013201543-56b159ff7a3a/go.mod h1:0tW64ZoTcra82SI6aHS2yEuNKe2hUSfCHFXe1eYAw9c=
 github.com/go-fde/clear v0.0.0-20261010194107-54d03c90d379 h1:nSJVCrA3ws2jbOuOIaObkj+fimhO9L+lTguHniqGsBE=
 github.com/go-fde/clear v0.0.0-20261010194107-54d03c90d379/go.mod h1:jA5QlXxLktc+f9ZhmzKP6kyPIK+v6yKJfpcOxkFdCEM=
-github.com/go-fde/luks v0.0.0-20261010194133-68ee356acf37 h1:1+YN0wsZ7oxIlG8g9Rd4vbqQIHXc6lAIS5IfJcTheko=
-github.com/go-fde/luks v0.0.0-20261010194133-68ee356acf37/go.mod h1:+vwgeqXQJYOSbb1+poJIdEA48/MA6CAo9DlOtumZZGU=
+github.com/go-fde/luks v0.0.0-20261013201635-bade5e568280 h1:wLjnv8bNBEEA2qs50+6etJC4qv12trquSgiitF/fGW8=
+github.com/go-fde/luks v0.0.0-20261013201635-bade5e568280/go.mod h1:zS+wgQeCMu0gL+dZDWbxa6P91ocfQw/BLP0082aG6pk=
 golang.org/x/crypto v0.58.0 h1:COkYLr4k7nDI4r6QtMML2AfzeIswWHAJthLS6K/M/54=
 golang.org/x/crypto v0.58.0/go.mod h1:Xh+kl5A+M0gMiWDytH2Hhr5Z7WbNCpv/eB/EFgfSk+w=
 golang.org/x/sys v0.49.0 h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA=
