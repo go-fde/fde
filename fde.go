@@ -1,15 +1,18 @@
 // Package fde provides a uniform Device interface for Full-Disk Encryption
-// block devices, abstracting over LUKS, APFS FileVault 2, and plaintext
-// (CLEAR) backends.
+// block devices, abstracting over LUKS, APFS FileVault 2, BitLocker, and
+// plaintext (CLEAR) backends.
 //
-// Both encrypted backends expose a Device whose ReadAt and WriteAt methods
-// transparently decrypt and encrypt I/O using their respective volume keys.
-// The CLEAR backend is a passthrough that applies no encryption.
+// The LUKS and APFS backends expose a Device whose ReadAt and WriteAt
+// methods transparently decrypt and encrypt I/O using their respective
+// volume keys. The BitLocker backend reads only: its WriteAt returns
+// bitlocker.ErrReadOnly. The CLEAR backend is a passthrough that applies no
+// encryption.
 //
 // # Supported backends
 //
 //   - LUKS 1/2 via github.com/go-fde/luks
 //   - APFS FileVault 2 via github.com/go-fde/apfs
+//   - BitLocker (Windows 7+, To Go), read-only, via github.com/go-fde/bitlocker
 //   - Plaintext passthrough via github.com/go-fde/clear
 //
 // # Usage
@@ -26,11 +29,13 @@
 package fde
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	apfsfde "github.com/go-fde/apfs"
+	"github.com/go-fde/bitlocker"
 	cleardev "github.com/go-fde/clear"
 	luks "github.com/go-fde/luks"
 )
@@ -49,6 +54,8 @@ type RW interface {
 //
 // LUKS offsets are relative to the start of the plaintext payload.
 // APFS offsets are absolute (relative to the start of the container device).
+// BitLocker offsets are those of the decrypted volume, which has the size of
+// the device.
 type Device interface {
 	io.ReaderAt
 	WriteAt(p []byte, off int64) (int, error)
@@ -71,6 +78,9 @@ const (
 	CLEAR
 	// Auto causes Open and OpenFrom to detect the format automatically.
 	Auto
+	// BITLOCKER selects the BitLocker backend (read-only). It comes after
+	// Auto so that the values of the earlier constants do not change.
+	BITLOCKER
 )
 
 // luksHeaderMagic is the 6-byte magic at the start of any LUKS container.
@@ -102,6 +112,9 @@ func DetectFrom(rw io.ReaderAt) (Type, error) {
 }
 
 // detectReader probes r for a known FDE header and returns the detected Type.
+// BitLocker needs the whole first sector: a To Go volume carries the FAT
+// signature "MSWIN4.1" and is told from plain FAT32 by an identifier at
+// offset 424, which bitlocker.Detect checks.
 func detectReader(r io.ReaderAt) Type {
 	buf := make([]byte, 36)
 	n, _ := r.ReadAt(buf, 0)
@@ -110,6 +123,9 @@ func detectReader(r io.ReaderAt) Type {
 	}
 	if n >= 36 && string(buf[32:36]) == apfsMagic {
 		return APFS
+	}
+	if bitlocker.Detect(r) {
+		return BITLOCKER
 	}
 	return CLEAR
 }
@@ -131,6 +147,8 @@ func Open(kind Type, path string, passphrase []byte) (Device, error) {
 		return OpenLUKS(path, passphrase)
 	case APFS:
 		return OpenAPFS(path, passphrase)
+	case BITLOCKER:
+		return OpenBitLocker(path, passphrase)
 	case CLEAR:
 		return OpenClear(path)
 	default:
@@ -151,6 +169,8 @@ func OpenFrom(kind Type, rw RW, passphrase []byte) (Device, error) {
 		return OpenLUKSFrom(rw, passphrase)
 	case APFS:
 		return OpenAPFSFrom(rw, passphrase)
+	case BITLOCKER:
+		return OpenBitLockerFrom(rw, passphrase)
 	case CLEAR:
 		return OpenClearFrom(rw)
 	default:
@@ -177,6 +197,8 @@ func Create(kind Type, path string, passphrase []byte) (Device, error) {
 			return nil, fmt.Errorf("fde: create APFS %s: %w", path, err)
 		}
 		return &apfsDevice{dev: dev}, nil
+	case BITLOCKER:
+		return nil, ErrCreateBitLocker
 	case CLEAR:
 		return OpenClear(path)
 	default:
@@ -201,6 +223,8 @@ func CreateFrom(kind Type, rw RW, passphrase []byte) (Device, error) {
 			return nil, fmt.Errorf("fde: create APFS from device: %w", err)
 		}
 		return &apfsDevice{dev: dev}, nil
+	case BITLOCKER:
+		return nil, ErrCreateBitLocker
 	case CLEAR:
 		return OpenClearFrom(rw)
 	default:
@@ -248,6 +272,49 @@ func OpenAPFSFrom(rw RW, passphrase []byte) (Device, error) {
 		return nil, fmt.Errorf("fde: open APFS FDE from device: %w", err)
 	}
 	return &apfsDevice{dev: dev}, nil
+}
+
+// ErrCreateBitLocker is returned by Create and CreateFrom for BITLOCKER: the
+// backend reads volumes Windows made and does not write new ones.
+var ErrCreateBitLocker = errors.New("fde: BitLocker volumes cannot be created, the backend is read-only")
+
+// OpenBitLocker opens the BitLocker volume at path read-only, unlocking it
+// with passphrase: a password, a recovery password ("123456-…"), the
+// contents of a .BEK startup key file, or nil for a clear-key volume.
+func OpenBitLocker(path string, passphrase []byte) (Device, error) {
+	dev, err := bitlocker.Open(path, passphrase)
+	if err != nil {
+		return nil, fmt.Errorf("fde: open BitLocker %s: %w", path, err)
+	}
+	return dev, nil
+}
+
+// sizer is a device that knows its length; os.File is told by Stat.
+type sizer interface{ Size() int64 }
+
+// OpenBitLockerFrom opens a BitLocker volume on top of rw. BitLocker maps the
+// whole device, so rw must tell its size: a Size() int64 method (as Device
+// and most virtual disks have) or a Stat() like *os.File. Close on the
+// returned Device also closes rw.
+func OpenBitLockerFrom(rw RW, passphrase []byte) (Device, error) {
+	var size int64
+	switch s := rw.(type) {
+	case sizer:
+		size = s.Size()
+	case interface{ Stat() (os.FileInfo, error) }:
+		st, err := s.Stat()
+		if err != nil {
+			return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
+		}
+		size = st.Size()
+	default:
+		return nil, fmt.Errorf("fde: open BitLocker from device: %T has neither Size nor Stat", rw)
+	}
+	dev, err := bitlocker.OpenFrom(rw, size, passphrase, bitlocker.DefaultLimits)
+	if err != nil {
+		return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
+	}
+	return dev, nil
 }
 
 // luksDevice wraps a *luks.Device as a Device.
