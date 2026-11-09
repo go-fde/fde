@@ -1,7 +1,13 @@
-github.com/go-encryptions/xts v0.1.0 h1:/uPOWw21d/yho/o98q6y7yz3O1ijp8rWdBIbeImSveA=
-github.com/go-encryptions/xts v0.1.0/go.mod h1:MpappevOqsWjrgi8lxnzHp1ylO8q8biBVsL0VWHidfQ=
+github.com/go-compressions/xz v0.3.1 h1:z4U2wNrV71pgUvxkSlBuoZc7JCJ7d+Tb3tSjyMeGhKc=
+github.com/go-compressions/xz v0.3.1/go.mod h1:ZbYM2CbKR8SZzq6rqhqlWFnBaXrNhWwQyTSslnYQ0FU=
+github.com/go-encryptions/ccm v0.1.0 h1:kVq0WlU0U+CZIy/pa64MXgBWuJrv/0jot0H8HJAJx2o=
+github.com/go-encryptions/ccm v0.1.0/go.mod h1:N6dSqzbwzd+65hl2B8C/8S0avlWhGCbfY1DdAXSm0vo=
+github.com/go-encryptions/xts v0.1.1 h1:RxdOtCzoDE4sdKEFF99baidQQaEb0iWTKmgVCvS7Fm8=
+github.com/go-encryptions/xts v0.1.1/go.mod h1:MpappevOqsWjrgi8lxnzHp1ylO8q8biBVsL0VWHidfQ=
 github.com/go-fde/apfs v0.3.0 h1:KBw5oWMKNGx2AS9g+kC/YZ9qaoCm48/jnad1PieYtx4=
 github.com/go-fde/apfs v0.3.0/go.mod h1:TO2peiXxBB8bmZgX/cuyRD10YGSix/I07yhZ+lCzXvY=
+github.com/go-fde/bitlocker v0.1.0 h1:XeBHGEdU/0LHtTzURB9JctlkOR85NK9c4QHUNvAsPrI=
+github.com/go-fde/bitlocker v0.1.0/go.mod h1:LJiNsWfbzwRAq24tqIrkBAr/jQ1bV2f540q8D6Go8Wc=
 github.com/go-fde/clear v0.0.0-20261031234011-a9b61d9ff704 h1:OYGjPhxyot8XkOOchTL6hWf7CTlq4M61X08Ve5AfZ8U=
 github.com/go-fde/clear v0.0.0-20261031234011-a9b61d9ff704/go.mod h1:jA5QlXxLktc+f9ZhmzKP6kyPIK+v6yKJfpcOxkFdCEM=
 github.com/go-fde/luks v0.2.0 h1:o9mXA9xCnqDbntLlCHnAoLTt+sPF8G/AuBjGad0QmYM=

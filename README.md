@@ -11,12 +11,13 @@ Unified dispatcher for Full-Disk Encryption block devices.
 ## Overview
 
 The `fde` package provides a single `Device` interface and a set of dispatcher
-functions that abstract over three backends:
+functions that abstract over four backends:
 
 | Backend | Type constant | Package |
 |---------|---------------|---------|
 | LUKS 1/2 | `fde.LUKS` | `github.com/go-fde/luks` |
 | APFS FileVault 2 | `fde.APFS` | `github.com/go-fde/apfs` |
+| BitLocker (Windows 7+, To Go), **read-only** | `fde.BITLOCKER` | `github.com/go-fde/bitlocker` |
 | Plaintext passthrough | `fde.CLEAR` | `github.com/go-fde/clear` |
 
 Pass `fde.Auto` to any `Open` or `OpenFrom` call to auto-detect the format
@@ -24,12 +25,30 @@ from the on-disk header.
 
 ## Format detection
 
-`Detect(path)` and `DetectFrom(rw)` identify the format by reading the first
-36 bytes of the device:
+`Detect(path)` and `DetectFrom(rw)` identify the format from the first sector
+of the device:
 
 - Bytes 0–5 equal `"LUKS\xba\xbe"` → `LUKS`
 - Bytes 32–35 equal `"NXSB"` → `APFS`
+- Bytes 3–10 equal `"-FVE-FS-"`, or `"MSWIN4.1"` with BitLocker's identifier
+  at byte 424 (To Go; plain FAT32 also writes `"MSWIN4.1"`) → `BITLOCKER`
 - Otherwise → `CLEAR`
+
+## BitLocker
+
+The secret passed as `passphrase` can be:
+
+- a password;
+- a recovery password (`"123456-…"`, 48 digits);
+- the contents of a `.BEK` startup key file;
+- `nil` for a volume whose protection is suspended (a clear key).
+
+`WriteAt` returns `bitlocker.ErrReadOnly`. `Create(fde.BITLOCKER, …)` returns
+`fde.ErrCreateBitLocker`. `OpenFrom` needs the device's size: an `RW` with a
+`Size() int64` method, or with `Stat()` like `*os.File`. The decrypted volume
+matches what cryptsetup's `bitlkOpen` maps; the
+[backend's README](https://github.com/go-fde/bitlocker) says how that is
+checked and what it refuses.
 
 ## Usage
 
@@ -70,6 +89,8 @@ case fde.LUKS:
     fmt.Println("LUKS container")
 case fde.APFS:
     fmt.Println("APFS FileVault 2 container")
+case fde.BITLOCKER:
+    fmt.Println("BitLocker volume")
 case fde.CLEAR:
     fmt.Println("plaintext device")
 }
@@ -138,6 +159,8 @@ dev.WriteAt(myData, 0)
 | `OpenLUKSFrom(rw, passphrase) (Device, error)` | LUKS-on-RW shorthand |
 | `OpenAPFS(path, passphrase) (Device, error)` | APFS shorthand |
 | `OpenAPFSFrom(rw, passphrase) (Device, error)` | APFS-on-RW shorthand |
+| `OpenBitLocker(path, passphrase) (Device, error)` | BitLocker shorthand (read-only) |
+| `OpenBitLockerFrom(rw, passphrase) (Device, error)` | BitLocker-on-RW shorthand; `rw` must tell its size |
 | `OpenClear(path) (Device, error)` | Plaintext shorthand |
 | `OpenClearFrom(rw) (Device, error)` | Plaintext-on-RW shorthand |
 
@@ -145,8 +168,8 @@ dev.WriteAt(myData, 0)
 
 | Function | Description |
 |----------|-------------|
-| `Create(kind, path, passphrase) (Device, error)` | Write container header to existing file |
-| `CreateFrom(kind, rw, passphrase) (Device, error)` | Write container header to existing `RW` |
+| `Create(kind, path, passphrase) (Device, error)` | Write container header to existing file (not BitLocker) |
+| `CreateFrom(kind, rw, passphrase) (Device, error)` | Write container header to existing `RW` (not BitLocker) |
 
 ### `Device` interface
 
@@ -167,3 +190,6 @@ LUKS and CLEAR offsets differ from APFS offsets:
   (byte 0 of the device). Block 0 is the NX superblock, block 1 is the key bag,
   payload starts at block 2.
 - **CLEAR** `ReadAt`/`WriteAt` offsets are **absolute from the file start**.
+- **BITLOCKER** `ReadAt` offsets are those of the **decrypted volume**, which
+  has the device's size: offset 0 is the volume's own boot sector (NTFS,
+  exFAT or FAT). `Size()` is the device size in whole sectors.
