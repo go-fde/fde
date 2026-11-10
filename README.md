@@ -11,17 +11,19 @@ Unified dispatcher for Full-Disk Encryption block devices.
 ## Overview
 
 The `fde` package provides a single `Device` interface and a set of dispatcher
-functions that abstract over four backends:
+functions that abstract over five backends:
 
 | Backend | Type constant | Package |
 |---------|---------------|---------|
 | LUKS 1/2 | `fde.LUKS` | `github.com/go-fde/luks` |
 | APFS FileVault 2 | `fde.APFS` | `github.com/go-fde/apfs` |
 | BitLocker (Windows 7+, To Go), **read-only** | `fde.BITLOCKER` | `github.com/go-fde/bitlocker` |
+| VeraCrypt and TrueCrypt, **read-only**, never auto-detected | `fde.VERACRYPT` | `github.com/go-fde/veracrypt` |
 | Plaintext passthrough | `fde.CLEAR` | `github.com/go-fde/clear` |
 
 Pass `fde.Auto` to any `Open` or `OpenFrom` call to auto-detect the format
-from the on-disk header.
+from the on-disk header. VeraCrypt is the exception: its header cannot be told
+apart from random bytes, so it must be named.
 
 ## Format detection
 
@@ -32,7 +34,7 @@ of the device:
 - Bytes 32–35 equal `"NXSB"` → `APFS`
 - Bytes 3–10 equal `"-FVE-FS-"`, or `"MSWIN4.1"` with BitLocker's identifier
   at byte 424 (To Go; plain FAT32 also writes `"MSWIN4.1"`) → `BITLOCKER`
-- Otherwise → `CLEAR`
+- Otherwise → `CLEAR` (a VeraCrypt volume, among others, detects as `CLEAR`)
 
 ## BitLocker
 
@@ -50,6 +52,22 @@ matches what cryptsetup's `bitlkOpen` maps; the
 [backend's README](https://github.com/go-fde/bitlocker) says how that is
 checked and what it refuses.
 
+## VeraCrypt
+
+`Open(fde.VERACRYPT, path, password)` opens a VeraCrypt or TrueCrypt volume
+read-only. Nothing on disk names the key derivation or the cipher, so the
+backend tries each pair until the header decrypts, as VeraCrypt itself does.
+With a wrong password every pair is tried, which takes several seconds; the
+error is `veracrypt.ErrWrongSecret`.
+
+The shorthand passes only a password. Keyfiles, a PIM, hidden volumes, backup
+headers, or naming the KDF and cipher need
+[`github.com/go-fde/veracrypt`](https://github.com/go-fde/veracrypt) directly;
+its README lists the supported ciphers and KDFs.
+
+`WriteAt` returns `veracrypt.ErrReadOnly`. `Create(fde.VERACRYPT, …)` returns
+`fde.ErrCreateVeraCrypt`. `OpenFrom` needs the device's size, as for BitLocker.
+
 ## Usage
 
 ### Open an existing device (explicit type)
@@ -62,6 +80,9 @@ dev, err := fde.Open(fde.LUKS, "/dev/sdb", []byte("passphrase"))
 
 // APFS
 dev, err := fde.Open(fde.APFS, "/dev/disk2s2", []byte("passphrase"))
+
+// VeraCrypt (never auto-detected)
+dev, err := fde.Open(fde.VERACRYPT, "/path/to/volume.hc", []byte("password"))
 
 // Plaintext
 dev, err := fde.Open(fde.CLEAR, "/path/to/disk.raw", nil)
@@ -161,6 +182,8 @@ dev.WriteAt(myData, 0)
 | `OpenAPFSFrom(rw, passphrase) (Device, error)` | APFS-on-RW shorthand |
 | `OpenBitLocker(path, passphrase) (Device, error)` | BitLocker shorthand (read-only) |
 | `OpenBitLockerFrom(rw, passphrase) (Device, error)` | BitLocker-on-RW shorthand; `rw` must tell its size |
+| `OpenVeraCrypt(path, password) (Device, error)` | VeraCrypt/TrueCrypt shorthand (read-only) |
+| `OpenVeraCryptFrom(rw, password) (Device, error)` | VeraCrypt-on-RW shorthand; `rw` must tell its size |
 | `OpenClear(path) (Device, error)` | Plaintext shorthand |
 | `OpenClearFrom(rw) (Device, error)` | Plaintext-on-RW shorthand |
 
@@ -168,8 +191,8 @@ dev.WriteAt(myData, 0)
 
 | Function | Description |
 |----------|-------------|
-| `Create(kind, path, passphrase) (Device, error)` | Write container header to existing file (not BitLocker) |
-| `CreateFrom(kind, rw, passphrase) (Device, error)` | Write container header to existing `RW` (not BitLocker) |
+| `Create(kind, path, passphrase) (Device, error)` | Write container header to existing file (not BitLocker or VeraCrypt) |
+| `CreateFrom(kind, rw, passphrase) (Device, error)` | Write container header to existing `RW` (not BitLocker or VeraCrypt) |
 
 ### `Device` interface
 
@@ -193,3 +216,6 @@ LUKS and CLEAR offsets differ from APFS offsets:
 - **BITLOCKER** `ReadAt` offsets are those of the **decrypted volume**, which
   has the device's size: offset 0 is the volume's own boot sector (NTFS,
   exFAT or FAT). `Size()` is the device size in whole sectors.
+- **VERACRYPT** `ReadAt` offsets are **relative to the data area**, as for
+  LUKS: offset 0 is the volume's file system. `Size()` is the volume size the
+  header records.

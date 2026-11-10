@@ -14,5 +14,6 @@ require (
 	github.com/go-encryptions/cbc v0.1.0 // indirect
 	github.com/go-encryptions/ccm v0.1.0 // indirect
 	github.com/go-encryptions/xts v0.2.0 // indirect
+	github.com/go-fde/veracrypt v0.1.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 )

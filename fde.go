@@ -1,18 +1,19 @@
 // Package fde provides a uniform Device interface for Full-Disk Encryption
-// block devices, abstracting over LUKS, APFS FileVault 2, BitLocker, and
-// plaintext (CLEAR) backends.
+// block devices, abstracting over LUKS, APFS FileVault 2, BitLocker,
+// VeraCrypt, and plaintext (CLEAR) backends.
 //
 // The LUKS and APFS backends expose a Device whose ReadAt and WriteAt
 // methods transparently decrypt and encrypt I/O using their respective
-// volume keys. The BitLocker backend reads only: its WriteAt returns
-// bitlocker.ErrReadOnly. The CLEAR backend is a passthrough that applies no
-// encryption.
+// volume keys. The BitLocker and VeraCrypt backends read only: their WriteAt
+// returns bitlocker.ErrReadOnly or veracrypt.ErrReadOnly. The CLEAR backend
+// is a passthrough that applies no encryption.
 //
 // # Supported backends
 //
 //   - LUKS 1/2 via github.com/go-fde/luks
 //   - APFS FileVault 2 via github.com/go-fde/apfs
 //   - BitLocker (Windows 7+, To Go), read-only, via github.com/go-fde/bitlocker
+//   - VeraCrypt and TrueCrypt, read-only, by name only, via github.com/go-fde/veracrypt
 //   - Plaintext passthrough via github.com/go-fde/clear
 //
 // # Usage
@@ -38,6 +39,7 @@ import (
 	"github.com/go-fde/bitlocker"
 	cleardev "github.com/go-fde/clear"
 	luks "github.com/go-fde/luks"
+	"github.com/go-fde/veracrypt"
 )
 
 // RW is the minimal read-write-close interface accepted by OpenLUKSFrom and
@@ -81,6 +83,10 @@ const (
 	// BITLOCKER selects the BitLocker backend (read-only). It comes after
 	// Auto so that the values of the earlier constants do not change.
 	BITLOCKER
+	// VERACRYPT selects the VeraCrypt and TrueCrypt backend (read-only).
+	// Auto never chooses it: a VeraCrypt header is indistinguishable from
+	// random bytes, so the caller names it.
+	VERACRYPT
 )
 
 // luksHeaderMagic is the 6-byte magic at the start of any LUKS container.
@@ -149,6 +155,8 @@ func Open(kind Type, path string, passphrase []byte) (Device, error) {
 		return OpenAPFS(path, passphrase)
 	case BITLOCKER:
 		return OpenBitLocker(path, passphrase)
+	case VERACRYPT:
+		return OpenVeraCrypt(path, passphrase)
 	case CLEAR:
 		return OpenClear(path)
 	default:
@@ -171,6 +179,8 @@ func OpenFrom(kind Type, rw RW, passphrase []byte) (Device, error) {
 		return OpenAPFSFrom(rw, passphrase)
 	case BITLOCKER:
 		return OpenBitLockerFrom(rw, passphrase)
+	case VERACRYPT:
+		return OpenVeraCryptFrom(rw, passphrase)
 	case CLEAR:
 		return OpenClearFrom(rw)
 	default:
@@ -199,6 +209,8 @@ func Create(kind Type, path string, passphrase []byte) (Device, error) {
 		return &apfsDevice{dev: dev}, nil
 	case BITLOCKER:
 		return nil, ErrCreateBitLocker
+	case VERACRYPT:
+		return nil, ErrCreateVeraCrypt
 	case CLEAR:
 		return OpenClear(path)
 	default:
@@ -225,6 +237,8 @@ func CreateFrom(kind Type, rw RW, passphrase []byte) (Device, error) {
 		return &apfsDevice{dev: dev}, nil
 	case BITLOCKER:
 		return nil, ErrCreateBitLocker
+	case VERACRYPT:
+		return nil, ErrCreateVeraCrypt
 	case CLEAR:
 		return OpenClearFrom(rw)
 	default:
@@ -292,27 +306,67 @@ func OpenBitLocker(path string, passphrase []byte) (Device, error) {
 // sizer is a device that knows its length; os.File is told by Stat.
 type sizer interface{ Size() int64 }
 
-// OpenBitLockerFrom opens a BitLocker volume on top of rw. BitLocker maps the
-// whole device, so rw must tell its size: a Size() int64 method (as Device
-// and most virtual disks have) or a Stat() like *os.File. Close on the
-// returned Device also closes rw.
-func OpenBitLockerFrom(rw RW, passphrase []byte) (Device, error) {
-	var size int64
+// deviceSize is rw's length, from a Size() int64 method (as Device and most
+// virtual disks have) or a Stat() like *os.File's. BitLocker and VeraCrypt
+// need it: their headers sit at both ends of the device.
+func deviceSize(rw RW) (int64, error) {
 	switch s := rw.(type) {
 	case sizer:
-		size = s.Size()
+		return s.Size(), nil
 	case interface{ Stat() (os.FileInfo, error) }:
 		st, err := s.Stat()
 		if err != nil {
-			return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
+			return 0, err
 		}
-		size = st.Size()
-	default:
-		return nil, fmt.Errorf("fde: open BitLocker from device: %T has neither Size nor Stat", rw)
+		return st.Size(), nil
+	}
+	return 0, fmt.Errorf("%T has neither Size nor Stat", rw)
+}
+
+// OpenBitLockerFrom opens a BitLocker volume on top of rw. BitLocker maps the
+// whole device, so rw must tell its size (see deviceSize). Close on the
+// returned Device also closes rw.
+func OpenBitLockerFrom(rw RW, passphrase []byte) (Device, error) {
+	size, err := deviceSize(rw)
+	if err != nil {
+		return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
 	}
 	dev, err := bitlocker.OpenFrom(rw, size, passphrase, bitlocker.DefaultLimits)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
+	}
+	return dev, nil
+}
+
+// ErrCreateVeraCrypt is returned by Create and CreateFrom for VERACRYPT: the
+// backend reads volumes and does not write new ones.
+var ErrCreateVeraCrypt = errors.New("fde: VeraCrypt volumes cannot be created, the backend is read-only")
+
+// OpenVeraCrypt opens the VeraCrypt or TrueCrypt volume at path read-only
+// with passphrase as its password, trying every KDF and cipher the backend
+// supports (about half a second each). For keyfiles, a PIM, a hidden
+// volume, or to name the KDF and cipher, use github.com/go-fde/veracrypt
+// directly. A VeraCrypt header is indistinguishable from random bytes, so
+// Auto never chooses this type: the caller names it.
+func OpenVeraCrypt(path string, passphrase []byte) (Device, error) {
+	dev, err := veracrypt.Open(path, veracrypt.Options{Password: passphrase})
+	if err != nil {
+		return nil, fmt.Errorf("fde: open VeraCrypt %s: %w", path, err)
+	}
+	return dev, nil
+}
+
+// OpenVeraCryptFrom opens a VeraCrypt or TrueCrypt volume on top of rw,
+// which must tell its size (see deviceSize). Close on the returned Device
+// also closes rw.
+func OpenVeraCryptFrom(rw RW, passphrase []byte) (Device, error) {
+	size, err := deviceSize(rw)
+	if err != nil {
+		return nil, fmt.Errorf("fde: open VeraCrypt from device: %w", err)
+	}
+	dev, err := veracrypt.OpenFrom(rw, size, veracrypt.Options{Password: passphrase})
+	if err != nil {
+		return nil, fmt.Errorf("fde: open VeraCrypt from device: %w", err)
 	}
 	return dev, nil
 }
