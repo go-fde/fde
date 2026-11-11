@@ -6,6 +6,8 @@ github.com/go-encryptions/cbc v0.1.0 h1:OhY536n6ZCr/nFt05xS4dr/1iuL/6rwUyjONu3Wz
 github.com/go-encryptions/cbc v0.1.0/go.mod h1:BhSOWBJ5QXH8trCypYXvpqVYqwchKfsQol+s2ZnNZYo=
 github.com/go-encryptions/ccm v0.1.0 h1:kVq0WlU0U+CZIy/pa64MXgBWuJrv/0jot0H8HJAJx2o=
 github.com/go-encryptions/ccm v0.1.0/go.mod h1:N6dSqzbwzd+65hl2B8C/8S0avlWhGCbfY1DdAXSm0vo=
+github.com/go-encryptions/kuznyechik v0.1.0 h1:19xwI7S6wqInVmI7TsE022NXRX32Krd2/YwhqrzJS0U=
+github.com/go-encryptions/kuznyechik v0.1.0/go.mod h1:NjtF55qcESMhbcr2xL0JAunEAgpln4hIswf9PnwkCgw=
 github.com/go-encryptions/serpent v0.1.0 h1:d13mzIis+yQ/X3j1z1XVMSz15r5hr2ty6Fg/3lhKcSU=
 github.com/go-encryptions/serpent v0.1.0/go.mod h1:kXXpRWtBvpI0BowZqSwqbIeMA0kgwNTL/wxShV7JUHg=
 github.com/go-encryptions/xts v0.2.0 h1:iy/XXrD1V5h4jZp1MX6Rfa/Tx/0XzBGmShacc3Bq810=
@@ -18,8 +20,8 @@ github.com/go-fde/clear v0.0.0-20261031234011-a9b61d9ff704 h1:OYGjPhxyot8XkOOchT
 github.com/go-fde/clear v0.0.0-20261031234011-a9b61d9ff704/go.mod h1:jA5QlXxLktc+f9ZhmzKP6kyPIK+v6yKJfpcOxkFdCEM=
 github.com/go-fde/luks v0.3.0 h1:GBHMlIqEjML+RJqa9VRPmsuKNFW1dl552TcFdaOqivk=
 github.com/go-fde/luks v0.3.0/go.mod h1:XcVWTOSSrwWSbBtdwmTIykQ57t2ytEAOzOfxreiy3LM=
-github.com/go-fde/veracrypt v0.3.0 h1:pIxWSQmjySBMKNcLXZUCtTF9mpG6xUftvVtamdRV2vs=
-github.com/go-fde/veracrypt v0.3.0/go.mod h1:cWumCjNF6w7u67au44qNDHJ5+VcuzHVAPYv09ojniYo=
+github.com/go-fde/veracrypt v0.4.0 h1:UNM/hdM35bMsdpZTV6VYOqh8lI5N1H/NScFAqUkpKLg=
+github.com/go-fde/veracrypt v0.4.0/go.mod h1:wRzQALCsIlgANP8l8yIHvrlrler5J9lhH7jks7p++zo=
 golang.org/x/crypto v0.58.0 h1:COkYLr4k7nDI4r6QtMML2AfzeIswWHAJthLS6K/M/54=
 golang.org/x/crypto v0.58.0/go.mod h1:Xh+kl5A+M0gMiWDytH2Hhr5Z7WbNCpv/eB/EFgfSk+w=
 golang.org/x/sys v0.49.0 h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA=
