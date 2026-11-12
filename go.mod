@@ -7,7 +7,7 @@ require (
 	github.com/go-fde/bitlocker v0.1.2
 	github.com/go-fde/clear v0.0.0-20261031234011-a9b61d9ff704
 	github.com/go-fde/luks v0.3.0
-	github.com/go-fde/veracrypt v0.5.0
+	github.com/go-fde/veracrypt v0.5.2
 	golang.org/x/crypto v0.58.0
 )
 
@@ -18,7 +18,8 @@ require (
 	github.com/go-encryptions/kuznyechik v0.1.0 // indirect
 	github.com/go-encryptions/serpent v0.1.0 // indirect
 	github.com/go-encryptions/streebog v0.2.0 // indirect
+	github.com/go-encryptions/twofish v0.1.1 // indirect
 	github.com/go-encryptions/whirlpool v0.2.0 // indirect
-	github.com/go-encryptions/xts v0.2.0 // indirect
-	golang.org/x/sys v0.49.0 // indirect
+	github.com/go-encryptions/xts v0.3.1 // indirect
+	golang.org/x/sys v0.50.0 // indirect
 )
