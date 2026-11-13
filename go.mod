@@ -8,7 +8,7 @@ require (
 	github.com/go-fde/clear v0.0.0-20261031234011-a9b61d9ff704
 	github.com/go-fde/luks v0.3.0
 	github.com/go-fde/veracrypt v0.6.1
-	golang.org/x/crypto v0.58.0
+	golang.org/x/crypto v0.59.0
 )
 
 require (
