@@ -166,6 +166,33 @@ defer dev.Close()
 dev.WriteAt(myData, 0)
 ```
 
+### Bound the key-derivation work of an unlock
+
+A header is read from the image, so it is untrusted: it can ask for hours of
+PBKDF2, gigabytes of Argon2 memory or hundreds of Argon2 threads. The LUKS and
+APFS backends charge every derivation of one unlock to a single
+[`kdfbudget`](https://github.com/go-encryptions/kdfbudget) budget before it
+runs, and refuse the volume with an error matching `kdfbudget.ErrLimit` (also
+`luks.ErrLimit` and `apfs.ErrLimit`).
+
+Without an option each `Open*` call gets a fresh `kdfbudget.Default()` (4 GiB
+of Argon2 memory, 2^32 work units) with Argon2 threads capped at 4, which is
+what cryptsetup writes; the APFS backend alone would take up to 255. Pass
+`WithBudget` to choose another. A budget is spent as it is used, so one shared
+by several calls caps their sum.
+
+```go
+b := kdfbudget.Default()
+b.MaxWork = 1 << 28 // tighter than the default
+dev, err := fde.Open(fde.Auto, "/path/to/disk", pass, fde.WithBudget(b))
+if errors.Is(err, kdfbudget.ErrLimit) {
+	// the header asks for more than the budget allows
+}
+```
+
+`kdfbudget.Unlimited()` is for a volume you trust. The BitLocker and VeraCrypt
+backends do not take a budget yet and ignore the option.
+
 ## API reference
 
 ### Opening and format detection
@@ -174,12 +201,13 @@ dev.WriteAt(myData, 0)
 |----------|-------------|
 | `Detect(path) (Type, error)` | Detect format from file header |
 | `DetectFrom(rw) (Type, error)` | Detect format from an `io.ReaderAt` |
-| `Open(kind, path, passphrase) (Device, error)` | Open device by path; `Auto` auto-detects |
-| `OpenFrom(kind, rw, passphrase) (Device, error)` | Open device from an `RW`; `Auto` auto-detects |
-| `OpenLUKS(path, passphrase) (Device, error)` | LUKS shorthand |
-| `OpenLUKSFrom(rw, passphrase) (Device, error)` | LUKS-on-RW shorthand |
-| `OpenAPFS(path, passphrase) (Device, error)` | APFS shorthand |
-| `OpenAPFSFrom(rw, passphrase) (Device, error)` | APFS-on-RW shorthand |
+| `Open(kind, path, passphrase, opts...) (Device, error)` | Open device by path; `Auto` auto-detects |
+| `OpenFrom(kind, rw, passphrase, opts...) (Device, error)` | Open device from an `RW`; `Auto` auto-detects |
+| `OpenLUKS(path, passphrase, opts...) (Device, error)` | LUKS shorthand |
+| `OpenLUKSFrom(rw, passphrase, opts...) (Device, error)` | LUKS-on-RW shorthand |
+| `OpenAPFS(path, passphrase, opts...) (Device, error)` | APFS shorthand |
+| `OpenAPFSFrom(rw, passphrase, opts...) (Device, error)` | APFS-on-RW shorthand |
+| `WithBudget(*kdfbudget.Budget) Option` | Key-derivation budget of an unlock (LUKS and APFS) |
 | `OpenBitLocker(path, passphrase) (Device, error)` | BitLocker shorthand (read-only) |
 | `OpenBitLockerFrom(rw, passphrase) (Device, error)` | BitLocker-on-RW shorthand; `rw` must tell its size |
 | `OpenVeraCrypt(path, password) (Device, error)` | VeraCrypt/TrueCrypt shorthand (read-only) |
