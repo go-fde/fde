@@ -5,9 +5,9 @@ go 1.27.1
 require (
 	github.com/go-encryptions/kdfbudget v0.1.0
 	github.com/go-fde/apfs v0.5.0
-	github.com/go-fde/bitlocker v0.1.3
+	github.com/go-fde/bitlocker v0.2.0
 	github.com/go-fde/clear v0.1.0
-	github.com/go-fde/luks v0.5.0
+	github.com/go-fde/luks v0.5.1
 	github.com/go-fde/veracrypt v0.7.1
 	golang.org/x/crypto v0.59.0
 )
@@ -15,7 +15,7 @@ require (
 require (
 	github.com/go-encryptions/camellia v0.1.0 // indirect
 	github.com/go-encryptions/cbc v0.1.1 // indirect
-	github.com/go-encryptions/ccm v0.1.0 // indirect
+	github.com/go-encryptions/ccm v0.1.1 // indirect
 	github.com/go-encryptions/hmac v0.1.0 // indirect
 	github.com/go-encryptions/kuznyechik v0.1.0 // indirect
 	github.com/go-encryptions/serpent v0.3.0 // indirect

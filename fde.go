@@ -154,7 +154,7 @@ func Open(kind Type, path string, passphrase []byte, opts ...Option) (Device, er
 	case APFS:
 		return OpenAPFS(path, passphrase, opts...)
 	case BITLOCKER:
-		return OpenBitLocker(path, passphrase)
+		return OpenBitLocker(path, passphrase, opts...)
 	case VERACRYPT:
 		return OpenVeraCrypt(path, passphrase)
 	case CLEAR:
@@ -178,7 +178,7 @@ func OpenFrom(kind Type, rw RW, passphrase []byte, opts ...Option) (Device, erro
 	case APFS:
 		return OpenAPFSFrom(rw, passphrase, opts...)
 	case BITLOCKER:
-		return OpenBitLockerFrom(rw, passphrase)
+		return OpenBitLockerFrom(rw, passphrase, opts...)
 	case VERACRYPT:
 		return OpenVeraCryptFrom(rw, passphrase)
 	case CLEAR:
@@ -303,9 +303,21 @@ var ErrCreateBitLocker = errors.New("fde: BitLocker volumes cannot be created, t
 // OpenBitLocker opens the BitLocker volume at path read-only, unlocking it
 // with passphrase: a password, a recovery password ("123456-…"), the
 // contents of a .BEK startup key file, or nil for a clear-key volume.
-func OpenBitLocker(path string, passphrase []byte) (Device, error) {
-	dev, err := bitlocker.Open(path, passphrase)
+func OpenBitLocker(path string, passphrase []byte, opts ...Option) (Device, error) {
+	f, err := os.Open(path)
 	if err != nil {
+		return nil, fmt.Errorf("fde: open BitLocker %s: %w", path, err)
+	}
+	size, err := deviceSize(f)
+	if err != nil {
+		f.Close()
+		return nil, fmt.Errorf("fde: open BitLocker %s: %w", path, err)
+	}
+	lim := bitlocker.DefaultLimits
+	lim.Budget = newConfig(opts).budget
+	dev, err := bitlocker.OpenFrom(f, size, passphrase, lim)
+	if err != nil {
+		f.Close()
 		return nil, fmt.Errorf("fde: open BitLocker %s: %w", path, err)
 	}
 	return dev, nil
@@ -334,12 +346,14 @@ func deviceSize(rw RW) (int64, error) {
 // OpenBitLockerFrom opens a BitLocker volume on top of rw. BitLocker maps the
 // whole device, so rw must tell its size (see deviceSize). Close on the
 // returned Device also closes rw.
-func OpenBitLockerFrom(rw RW, passphrase []byte) (Device, error) {
+func OpenBitLockerFrom(rw RW, passphrase []byte, opts ...Option) (Device, error) {
 	size, err := deviceSize(rw)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
 	}
-	dev, err := bitlocker.OpenFrom(rw, size, passphrase, bitlocker.DefaultLimits)
+	lim := bitlocker.DefaultLimits
+	lim.Budget = newConfig(opts).budget
+	dev, err := bitlocker.OpenFrom(rw, size, passphrase, lim)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
 	}
