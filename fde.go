@@ -308,17 +308,26 @@ func OpenBitLocker(path string, passphrase []byte, opts ...Option) (Device, erro
 	if err != nil {
 		return nil, fmt.Errorf("fde: open BitLocker %s: %w", path, err)
 	}
-	size, err := deviceSize(f)
+	dev, err := openBitLocker(f, passphrase, opts)
 	if err != nil {
 		f.Close()
 		return nil, fmt.Errorf("fde: open BitLocker %s: %w", path, err)
 	}
+	return dev, nil
+}
+
+// openBitLocker is the shared body of OpenBitLocker and OpenBitLockerFrom;
+// it does not close rw on failure.
+func openBitLocker(rw RW, passphrase []byte, opts []Option) (Device, error) {
+	size, err := deviceSize(rw)
+	if err != nil {
+		return nil, err
+	}
 	lim := bitlocker.DefaultLimits
 	lim.Budget = newConfig(opts).budget
-	dev, err := bitlocker.OpenFrom(f, size, passphrase, lim)
+	dev, err := bitlocker.OpenFrom(rw, size, passphrase, lim)
 	if err != nil {
-		f.Close()
-		return nil, fmt.Errorf("fde: open BitLocker %s: %w", path, err)
+		return nil, err
 	}
 	return dev, nil
 }
@@ -347,13 +356,7 @@ func deviceSize(rw RW) (int64, error) {
 // whole device, so rw must tell its size (see deviceSize). Close on the
 // returned Device also closes rw.
 func OpenBitLockerFrom(rw RW, passphrase []byte, opts ...Option) (Device, error) {
-	size, err := deviceSize(rw)
-	if err != nil {
-		return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
-	}
-	lim := bitlocker.DefaultLimits
-	lim.Budget = newConfig(opts).budget
-	dev, err := bitlocker.OpenFrom(rw, size, passphrase, lim)
+	dev, err := openBitLocker(rw, passphrase, opts)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open BitLocker from device: %w", err)
 	}
