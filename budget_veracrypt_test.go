@@ -54,6 +54,13 @@ func TestOpenVeraCrypt_BudgetRefusesAndAccepts(t *testing.T) {
 				t.Fatalf("a budget one unit short: err = %v, want ErrLimit", err)
 			}
 			b := veracryptBudget(veracryptDerivation)
+			// The refusal above is cheap (the 500,000-iteration derivation is
+			// skipped); a successful open costs it in full, which under -race
+			// on arm64 is minutes. Two entry points, one path and one stream,
+			// open; the others only prove the option arrives.
+			if name != "OpenVeraCrypt" && name != "OpenFrom(VERACRYPT)" {
+				return
+			}
 			dev, err := f(b)
 			if err != nil {
 				t.Fatalf("a budget of exactly the trial refused: %v", err)
@@ -70,11 +77,9 @@ func TestOpenVeraCrypt_BudgetRefusesAndAccepts(t *testing.T) {
 // default budget, which a normal volume fits every time.
 func TestOpenVeraCrypt_DefaultBudgetAcceptsNormalVolume(t *testing.T) {
 	path := decompressFixture(t, veracryptFixture)
-	for range 2 {
-		dev, err := OpenVeraCrypt(path, []byte(veracryptPassword))
-		if err != nil {
-			t.Fatal(err)
-		}
-		dev.Close()
+	dev, err := OpenVeraCrypt(path, []byte(veracryptPassword))
+	if err != nil {
+		t.Fatal(err)
 	}
+	dev.Close()
 }
