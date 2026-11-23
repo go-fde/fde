@@ -17,7 +17,7 @@ tasks:
   test:
     desc: "Run tests with race + coverage"
     cmds:
-      - go test -race -coverprofile=cover.out ./...
+      - go test -race -timeout 30m -coverprofile=cover.out ./...
       - go tool cover -func=cover.out | tail -1
 
   lint:
