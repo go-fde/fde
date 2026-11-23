@@ -140,7 +140,7 @@ func detectReader(r io.ReaderAt) Type {
 // passphrase. It dispatches based on kind; when kind is Auto the format is
 // detected from the file header.
 // For CLEAR devices passphrase is ignored.
-func Open(kind Type, path string, passphrase []byte) (Device, error) {
+func Open(kind Type, path string, passphrase []byte, opts ...Option) (Device, error) {
 	if kind == Auto {
 		detected, err := Detect(path)
 		if err != nil {
@@ -150,9 +150,9 @@ func Open(kind Type, path string, passphrase []byte) (Device, error) {
 	}
 	switch kind {
 	case LUKS:
-		return OpenLUKS(path, passphrase)
+		return OpenLUKS(path, passphrase, opts...)
 	case APFS:
-		return OpenAPFS(path, passphrase)
+		return OpenAPFS(path, passphrase, opts...)
 	case BITLOCKER:
 		return OpenBitLocker(path, passphrase)
 	case VERACRYPT:
@@ -167,16 +167,16 @@ func Open(kind Type, path string, passphrase []byte) (Device, error) {
 // OpenFrom opens an FDE device of the given type on top of rw, unlocking it
 // with passphrase. When kind is Auto the format is detected from rw's header.
 // For CLEAR devices passphrase is ignored.
-func OpenFrom(kind Type, rw RW, passphrase []byte) (Device, error) {
+func OpenFrom(kind Type, rw RW, passphrase []byte, opts ...Option) (Device, error) {
 	if kind == Auto {
 		// DetectFrom never errors — it reads from rw and classifies by magic.
 		kind, _ = DetectFrom(rw)
 	}
 	switch kind {
 	case LUKS:
-		return OpenLUKSFrom(rw, passphrase)
+		return OpenLUKSFrom(rw, passphrase, opts...)
 	case APFS:
-		return OpenAPFSFrom(rw, passphrase)
+		return OpenAPFSFrom(rw, passphrase, opts...)
 	case BITLOCKER:
 		return OpenBitLockerFrom(rw, passphrase)
 	case VERACRYPT:
@@ -248,8 +248,10 @@ func CreateFrom(kind Type, rw RW, passphrase []byte) (Device, error) {
 
 // OpenLUKS opens the LUKS1/LUKS2 encrypted container at path, unlocking it
 // with passphrase. path may be a raw disk image or block device file.
-func OpenLUKS(path string, passphrase []byte) (Device, error) {
-	dev, err := luks.Open(path, passphrase)
+func OpenLUKS(path string, passphrase []byte, opts ...Option) (Device, error) {
+	lim := luks.DefaultLimits
+	lim.Budget = newConfig(opts).budget
+	dev, err := luks.OpenLimited(path, passphrase, lim)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open LUKS %s: %w", path, err)
 	}
@@ -259,8 +261,10 @@ func OpenLUKS(path string, passphrase []byte) (Device, error) {
 // OpenLUKSFrom opens a LUKS container on top of an existing block device rw,
 // unlocking it with passphrase. This allows LUKS to be stacked on a QCOW2
 // device or any other RW backend. Close on the returned Device also closes rw.
-func OpenLUKSFrom(rw RW, passphrase []byte) (Device, error) {
-	dev, err := luks.OpenFrom(rw, passphrase)
+func OpenLUKSFrom(rw RW, passphrase []byte, opts ...Option) (Device, error) {
+	lim := luks.DefaultLimits
+	lim.Budget = newConfig(opts).budget
+	dev, err := luks.OpenFromLimited(rw, passphrase, lim)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open LUKS from device: %w", err)
 	}
@@ -269,8 +273,10 @@ func OpenLUKSFrom(rw RW, passphrase []byte) (Device, error) {
 
 // OpenAPFS opens the FileVault 2-encrypted APFS container at path, unlocking
 // it with passphrase. path may be a raw disk image or block device file.
-func OpenAPFS(path string, passphrase []byte) (Device, error) {
-	dev, err := apfsfde.Open(path, passphrase)
+func OpenAPFS(path string, passphrase []byte, opts ...Option) (Device, error) {
+	lim := apfsfde.DefaultLimits
+	lim.Budget = newConfig(opts).budget
+	dev, err := apfsfde.OpenLimited(path, passphrase, lim)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open APFS FDE %s: %w", path, err)
 	}
@@ -280,8 +286,10 @@ func OpenAPFS(path string, passphrase []byte) (Device, error) {
 // OpenAPFSFrom opens a FileVault 2 APFS container on top of an existing block
 // device rw, unlocking it with passphrase. Close on the returned Device also
 // closes rw.
-func OpenAPFSFrom(rw RW, passphrase []byte) (Device, error) {
-	dev, err := apfsfde.OpenFrom(rw, passphrase)
+func OpenAPFSFrom(rw RW, passphrase []byte, opts ...Option) (Device, error) {
+	lim := apfsfde.DefaultLimits
+	lim.Budget = newConfig(opts).budget
+	dev, err := apfsfde.OpenFromLimited(rw, passphrase, lim)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open APFS FDE from device: %w", err)
 	}
