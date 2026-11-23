@@ -60,7 +60,8 @@ backend tries each pair until the header decrypts, as VeraCrypt itself does.
 With a wrong password every pair is tried, which takes several seconds; the
 error is `veracrypt.ErrWrongSecret`.
 
-The shorthand passes only a password. Keyfiles, a PIM, hidden volumes, backup
+The shorthand passes only a password, and takes `WithBudget` like the other
+backends. Keyfiles, a PIM, hidden volumes, backup
 headers, or naming the KDF and cipher need
 [`github.com/go-fde/veracrypt`](https://github.com/go-fde/veracrypt) directly;
 its README lists the supported ciphers and KDFs.
@@ -169,11 +170,12 @@ dev.WriteAt(myData, 0)
 ### Bound the key-derivation work of an unlock
 
 A header is read from the image, so it is untrusted: it can ask for hours of
-PBKDF2, gigabytes of Argon2 memory or hundreds of Argon2 threads. The LUKS and
-APFS backends charge every derivation of one unlock to a single
-[`kdfbudget`](https://github.com/go-encryptions/kdfbudget) budget before it
-runs, and refuse the volume with an error matching `kdfbudget.ErrLimit` (also
-`luks.ErrLimit` and `apfs.ErrLimit`).
+PBKDF2, gigabytes of Argon2 memory or hundreds of Argon2 threads. The LUKS,
+APFS, BitLocker and VeraCrypt backends charge every derivation of one unlock to
+a single [`kdfbudget`](https://github.com/go-encryptions/kdfbudget) budget
+before it runs, and refuse the volume with an error matching `kdfbudget.ErrLimit`
+(also `luks.ErrLimit`, `apfs.ErrLimit`, `bitlocker.ErrLimit` and
+`veracrypt.ErrLimit`).
 
 Without an option each `Open*` call gets a fresh `kdfbudget.Default()` (4 GiB
 of Argon2 memory, 2^32 work units) with Argon2 threads capped at 4, which is
@@ -190,8 +192,10 @@ if errors.Is(err, kdfbudget.ErrLimit) {
 }
 ```
 
-`kdfbudget.Unlimited()` is for a volume you trust. The BitLocker and VeraCrypt
-backends do not take a budget yet and ignore the option.
+`kdfbudget.Unlimited()` is for a volume you trust. VeraCrypt hides its KDF, so
+a trial charges every KDF it tries (about 6e6 units for a normal volume, PIM 0);
+a KDF the budget refuses is skipped, and if none opens the volume the error is
+`ErrLimit`, never a wrong password.
 
 ## API reference
 
@@ -207,7 +211,7 @@ backends do not take a budget yet and ignore the option.
 | `OpenLUKSFrom(rw, passphrase, opts...) (Device, error)` | LUKS-on-RW shorthand |
 | `OpenAPFS(path, passphrase, opts...) (Device, error)` | APFS shorthand |
 | `OpenAPFSFrom(rw, passphrase, opts...) (Device, error)` | APFS-on-RW shorthand |
-| `WithBudget(*kdfbudget.Budget) Option` | Key-derivation budget of an unlock (LUKS and APFS) |
+| `WithBudget(*kdfbudget.Budget) Option` | Key-derivation budget of an unlock (LUKS, APFS, BitLocker, VeraCrypt) |
 | `OpenBitLocker(path, passphrase) (Device, error)` | BitLocker shorthand (read-only) |
 | `OpenBitLockerFrom(rw, passphrase) (Device, error)` | BitLocker-on-RW shorthand; `rw` must tell its size |
 | `OpenVeraCrypt(path, password) (Device, error)` | VeraCrypt/TrueCrypt shorthand (read-only) |

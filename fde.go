@@ -156,7 +156,7 @@ func Open(kind Type, path string, passphrase []byte, opts ...Option) (Device, er
 	case BITLOCKER:
 		return OpenBitLocker(path, passphrase, opts...)
 	case VERACRYPT:
-		return OpenVeraCrypt(path, passphrase)
+		return OpenVeraCrypt(path, passphrase, opts...)
 	case CLEAR:
 		return OpenClear(path)
 	default:
@@ -180,7 +180,7 @@ func OpenFrom(kind Type, rw RW, passphrase []byte, opts ...Option) (Device, erro
 	case BITLOCKER:
 		return OpenBitLockerFrom(rw, passphrase, opts...)
 	case VERACRYPT:
-		return OpenVeraCryptFrom(rw, passphrase)
+		return OpenVeraCryptFrom(rw, passphrase, opts...)
 	case CLEAR:
 		return OpenClearFrom(rw)
 	default:
@@ -373,8 +373,15 @@ var ErrCreateVeraCrypt = errors.New("fde: VeraCrypt volumes cannot be created, t
 // volume, or to name the KDF and cipher, use github.com/go-fde/veracrypt
 // directly. A VeraCrypt header is indistinguishable from random bytes, so
 // Auto never chooses this type: the caller names it.
-func OpenVeraCrypt(path string, passphrase []byte) (Device, error) {
-	dev, err := veracrypt.Open(path, veracrypt.Options{Password: passphrase})
+//
+// WithBudget bounds the key-derivation work of the whole trial; without it
+// each call gets a fresh kdfbudget.Default(). The shorthand's PIM is 0, so a
+// normal volume costs about 6e6 units at most.
+func OpenVeraCrypt(path string, passphrase []byte, opts ...Option) (Device, error) {
+	dev, err := veracrypt.Open(path, veracrypt.Options{
+		Password: passphrase,
+		Limits:   veracrypt.Limits{Budget: newConfig(opts).budget},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("fde: open VeraCrypt %s: %w", path, err)
 	}
@@ -384,12 +391,15 @@ func OpenVeraCrypt(path string, passphrase []byte) (Device, error) {
 // OpenVeraCryptFrom opens a VeraCrypt or TrueCrypt volume on top of rw,
 // which must tell its size (see deviceSize). Close on the returned Device
 // also closes rw.
-func OpenVeraCryptFrom(rw RW, passphrase []byte) (Device, error) {
+func OpenVeraCryptFrom(rw RW, passphrase []byte, opts ...Option) (Device, error) {
 	size, err := deviceSize(rw)
 	if err != nil {
 		return nil, fmt.Errorf("fde: open VeraCrypt from device: %w", err)
 	}
-	dev, err := veracrypt.OpenFrom(rw, size, veracrypt.Options{Password: passphrase})
+	dev, err := veracrypt.OpenFrom(rw, size, veracrypt.Options{
+		Password: passphrase,
+		Limits:   veracrypt.Limits{Budget: newConfig(opts).budget},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("fde: open VeraCrypt from device: %w", err)
 	}
