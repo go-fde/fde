@@ -80,7 +80,8 @@ func TestOpenBitLocker_DefaultBudgetAcceptsNormalVolume(t *testing.T) {
 // TestOpenBitLocker_RefusedByPathOpenFails: a missing file is an error, not a
 // panic, with an option given.
 func TestOpenBitLocker_RefusedByPathOpenFails(t *testing.T) {
-	if _, err := OpenBitLocker(t.TempDir()+"/missing", nil, WithBudget(kdfbudget.Default())); err == nil {
-		t.Fatal("a missing file opened")
+	_, err := OpenBitLocker(t.TempDir()+"/missing", nil, WithBudget(kdfbudget.Default()))
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("err = %v, want os.ErrNotExist", err)
 	}
 }
