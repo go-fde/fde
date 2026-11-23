@@ -15,15 +15,16 @@ type config struct {
 }
 
 // WithBudget makes an unlock charge its key-derivation work to b instead of a
-// default budget. The LUKS and APFS backends charge every derivation to b
-// before it runs, and refuse the volume with an error that matches
-// kdfbudget.ErrLimit (also luks.ErrLimit and apfs.ErrLimit) when the total, an
-// Argon2 run's memory or its threads exceed b.
+// default budget. The LUKS, APFS and BitLocker backends charge every
+// derivation to b before it runs, and refuse the volume with an error that
+// matches kdfbudget.ErrLimit (also luks.ErrLimit, apfs.ErrLimit and
+// bitlocker.ErrLimit) when the total, an Argon2 run's memory or its threads
+// exceed b.
 //
 // A Budget is spent as it is used: one shared by several Open calls caps their
 // sum, so give each unlock its own to cap each one. kdfbudget.Unlimited() is
-// for a volume you trust. The BitLocker and VeraCrypt backends do not take a
-// budget yet and ignore it.
+// for a volume you trust. The VeraCrypt backend does not take a budget yet and
+// ignores it.
 func WithBudget(b *kdfbudget.Budget) Option {
 	return func(c *config) { c.budget = b }
 }

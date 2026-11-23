@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/go-fde/bitlocker"
@@ -119,16 +120,16 @@ func TestOpenBitLockerFrom(t *testing.T) {
 	if _, err := OpenBitLockerFrom(sizedRW{bytes.NewReader(img)}, []byte("nope")); !errors.Is(err, bitlocker.ErrWrongSecret) {
 		t.Errorf("wrong passphrase: %v", err)
 	}
-	if _, err := OpenBitLockerFrom(unsizedRW{sizedRW{bytes.NewReader(img)}}, nil); err == nil {
-		t.Error("a device without a size opened")
+	if _, err := OpenBitLockerFrom(unsizedRW{sizedRW{bytes.NewReader(img)}}, nil); err == nil || !strings.Contains(err.Error(), "neither Size nor Stat") {
+		t.Errorf("a device without a size: %v", err)
 	}
 	f, err := os.Open(decompressFixture(t, bitlockerFixture))
 	if err != nil {
 		t.Fatal(err)
 	}
 	f.Close() // Stat now fails
-	if _, err := OpenBitLockerFrom(readOnlyFile{f}, nil); err == nil {
-		t.Error("a closed file opened")
+	if _, err := OpenBitLockerFrom(readOnlyFile{f}, nil); !errors.Is(err, os.ErrClosed) {
+		t.Errorf("a closed file: %v, want os.ErrClosed", err)
 	}
 }
 
