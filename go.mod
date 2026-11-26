@@ -7,7 +7,7 @@ require (
 	github.com/go-fde/apfs v0.5.1
 	github.com/go-fde/bitlocker v0.2.0
 	github.com/go-fde/clear v0.1.0
-	github.com/go-fde/luks v0.5.1
+	github.com/go-fde/luks v0.5.2
 	github.com/go-fde/veracrypt v0.8.1
 	golang.org/x/crypto v0.59.0
 )
